@@ -1,4 +1,4 @@
-import { importMeasurementPhoto } from '../photo-loader.mjs';
+import { checkPhotoAbort, importMeasurementPhoto } from '../photo-loader.mjs';
 import { photoInfo } from './photo-info.mjs';
 import { cameraMatches, captureSettings, csv, interpolate, linearToSrgb, measure,
   SPECTRAL_CLASSES, spectralClass, validateProfile } from './photometry.mjs';
@@ -219,7 +219,7 @@ async function openPhoto(file, demo = false) {
       photoMessage = 'openingHeif';
       renderPhotoHeader();
     });
-    signal.throwIfAborted();
+    checkPhotoAbort(signal);
     photo = { ...frame, demo, name: file.name, metadata: photoInfo(frame, file) };
     for (const [name, id] of Object.entries(fieldIds)) element(id).value = photo.metadata[name] || '';
     if (demo) selected = { ...coordinates.blue };

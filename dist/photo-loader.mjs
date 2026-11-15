@@ -9,6 +9,13 @@ export class PhotoImportError extends Error {
   }
 }
 
+// AbortSignal.throwIfAborted is missing in older Safari and embedded browsers.
+export function checkPhotoAbort(signal) {
+  if (signal.aborted) {
+    throw signal.reason || new DOMException('Photo import aborted', 'AbortError');
+  }
+}
+
 export function cameraFormat(bytes, name, type) {
   if (bytes[0] === 0xff && bytes[1] === 0xd8) return 'image';
   if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image';
@@ -30,7 +37,7 @@ export function cameraFormat(bytes, name, type) {
 }
 
 function loadImage(url, signal) {
-  signal.throwIfAborted();
+  checkPhotoAbort(signal);
   return new Promise((resolve, reject) => {
     const picture = new Image();
     const finish = (error) => {
@@ -40,7 +47,7 @@ function loadImage(url, signal) {
       else resolve(picture);
     };
     const cancel = () => {
-      finish(signal.reason);
+      finish(signal.reason || new DOMException('Photo import aborted', 'AbortError'));
       picture.removeAttribute('src');
     };
     picture.onload = () => finish();
@@ -103,7 +110,7 @@ async function previewPicture(source, width, height) {
 }
 
 function readHeif(file, signal, fullResolution = false) {
-  signal.throwIfAborted();
+  checkPhotoAbort(signal);
   let worker;
   try {
     worker = new Worker(new URL('./heif-worker.js', import.meta.url));
@@ -118,7 +125,7 @@ function readHeif(file, signal, fullResolution = false) {
       if (error) reject(error);
       else resolve(frame);
     };
-    const cancel = () => finish(signal.reason);
+    const cancel = () => finish(signal.reason || new DOMException('Photo import aborted', 'AbortError'));
     const timer = setTimeout(() => finish(new PhotoImportError('heif-timeout')), 35_000);
     signal.addEventListener('abort', cancel, { once: true });
     worker.onmessage = ({ data }) => {
@@ -138,7 +145,7 @@ export async function importPhoto(input, signal, onHeifFallback) {
 
   if (!input.size) throw new PhotoImportError('empty');
   const header = new Uint8Array(await input.slice(0, 128).arrayBuffer());
-  signal.throwIfAborted();
+  checkPhotoAbort(signal);
   const format = cameraFormat(header, input.name, input.type);
   if (format === 'raw' || format === 'video') throw new PhotoImportError(format);
   if (input.size > maxFileBytes) throw new PhotoImportError('file-size');
@@ -152,7 +159,7 @@ export async function importPhoto(input, signal, onHeifFallback) {
     const preview = await previewPicture(picture, naturalWidth, naturalHeight);
     return { ...frame, preview };
   } catch (error) {
-    signal.throwIfAborted();
+    checkPhotoAbort(signal);
     if (format !== 'heif' || (error instanceof PhotoImportError && error.code !== 'unreadable')) throw error;
   } finally {
     URL.revokeObjectURL(url);
@@ -178,7 +185,7 @@ export async function importMeasurementPhoto(file, signal, onHeifFallback) {
   if (!file.size) throw new PhotoImportError('empty');
   if (file.size > maxFileBytes) throw new PhotoImportError('file-size');
   const header = new Uint8Array(await file.slice(0, 512 * 1024).arrayBuffer());
-  signal.throwIfAborted();
+  checkPhotoAbort(signal);
   const format = cameraFormat(header.subarray(0, 128), file.name, file.type);
   if (format === 'raw' || format === 'video') throw new PhotoImportError(format);
   const blob = format === 'heif' ? new Blob([file], { type: 'image/heic' }) : file;
@@ -199,7 +206,7 @@ export async function importMeasurementPhoto(file, signal, onHeifFallback) {
       },
     };
   } catch (error) {
-    signal.throwIfAborted();
+    checkPhotoAbort(signal);
     if (format !== 'heif' || !(error instanceof PhotoImportError) || error.code !== 'unreadable') throw error;
   } finally {
     URL.revokeObjectURL(url);
@@ -207,7 +214,7 @@ export async function importMeasurementPhoto(file, signal, onHeifFallback) {
 
   onHeifFallback();
   const { width, height, pixels, preview } = await readHeif(file, signal, true);
-  signal.throwIfAborted();
+  checkPhotoAbort(signal);
   const original = new Uint8ClampedArray(pixels);
   const picture = makeCanvas(preview.width, preview.height);
   picture.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(preview.pixels),
