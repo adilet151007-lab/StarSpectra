@@ -1,0 +1,15 @@
+HEIF/HEIC decoder
+
+The JavaScript launcher and WebAssembly decoder are unmodified files from
+libheif-js 1.23.5 (libheif-wasm/libheif.js and libheif-wasm/libheif.wasm).
+The filenames on this site include the package version.
+
+Package and checksums:
+https://www.npmjs.com/package/libheif-js/v/1.23.5
+https://registry.npmjs.org/libheif-js/-/libheif-js-1.23.5.tgz
+
+Corresponding source, build scripts and dependency versions:
+https://github.com/catdad-experiments/libheif-js/tree/d8ec4bc3bc5bf8055975577bccbbc7e1d7313c2d
+https://github.com/catdad-experiments/libheif-js/blob/d8ec4bc3bc5bf8055975577bccbbc7e1d7313c2d/scripts/install.js
+
+Licenses: libheif-js-license.txt and decoder-licenses.txt in this directory.

@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090e17">
+  <title>StarSpektra · Цвет и температура</title>
+  <meta name="description" content="Измерение цвета звёзд на фото, калибровка камеры и расчёт температуры по модели Планка.">
+  <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../fonts.css">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="./spectra.css">
+  <script type="module" src="./spectra.mjs"></script>
+</head>
+<body class="spectra">
+  <header class="shell site-header">
+    <a class="brand" href="../"><img src="../assets/icon.svg" width="36" height="36" alt=""> StarSpektra</a>
+    <div class="language" role="group" data-label="languages" aria-label="Язык">
+      <button type="button" data-language="ru" lang="ru" aria-pressed="true">РУС</button>
+      <button type="button" data-language="kk" lang="kk" aria-pressed="false">ҚАЗ</button>
+    </div>
+  </header>
+  <nav class="shell mode-navigation" data-label="siteModes" aria-label="Режим анализа">
+    <a href="../" data-text="constellations">Созвездия</a>
+    <a href="./" aria-current="page" data-text="title">Цвет и температура</a>
+  </nav>
+
+  <main class="shell">
+    <section class="lab-intro">
+      <h1 data-text="title">Цвет и температура</h1>
+      <p data-text="intro">Измерь цвет звезды на снимке или проверь, как отношение синего к красному меняет температуру в модели Планка.</p>
+    </section>
+    <nav class="lab-tabs" data-label="labModes" aria-label="Режим измерения">
+      <a id="photo-tab" href="#photo" aria-current="true" data-text="photoTab">Измерение по фото</a>
+      <a id="model-tab" href="#model" data-text="modelTab">Модель Планка</a>
+    </nav>
+
+    <section id="photo-view">
+      <div class="lab-layout">
+        <section class="lab-panel image-panel" aria-labelledby="photo-heading">
+          <div class="lab-panel-top">
+            <h2 id="photo-heading" data-text="photoHeading">Снимок звезды</h2>
+            <p class="file-meta" id="file-meta" hidden></p>
+          </div>
+          <div class="photo-tools">
+            <label class="button button-primary file-button">
+              <span data-text="openPhoto">Открыть фото</span>
+              <input type="file" id="photo-file" accept="image/*,.heic,.heif,.dng" data-label="openPhoto" aria-label="Открыть фото">
+            </label>
+            <label class="button button-secondary file-button">
+              <span data-text="camera">Камера</span>
+              <input type="file" id="capture-file" accept="image/*" capture="environment" data-label="camera" aria-label="Камера">
+            </label>
+            <button type="button" id="example-photo" class="button button-secondary" data-text="openExample">Открыть пример</button>
+          </div>
+          <div class="photo-area" id="photo-area">
+            <canvas id="photo-canvas" tabindex="0" data-label="imageLabel" aria-label="Снимок. Нажми на центр звезды или перемещай точку стрелками."></canvas>
+            <p class="photo-message" id="photo-message" role="status"></p>
+            <button type="button" class="photo-zoom" id="zoom-photo" data-label="zoom" aria-label="Масштаб" hidden>1×</button>
+          </div>
+          <div class="sample-tools" id="sample-tools" hidden>
+            <span data-text="exampleTag">Учебный снимок</span>
+            <button type="button" data-example-star="blue" data-text="blueStar">Синяя звезда</button>
+            <button type="button" data-example-star="warm" data-text="warmStar">Тёплая звезда</button>
+          </div>
+          <p id="photo-hint" class="lab-hint" data-text="photoHint">Нажми на центр звезды. Голубой круг обозначает область измерения, жёлтое кольцо — фон.</p>
+          <div class="geometry-grid" id="geometry">
+            <label><span data-text="radius">Апертура</span><span class="size-input"><input id="radius" type="number" min="2" max="56" value="8"><span>px</span></span></label>
+            <label><span data-text="inner">Внутренний край фона</span><span class="size-input"><input id="inner" type="number" min="10" max="80" value="14"><span>px</span></span></label>
+            <label><span data-text="outer">Внешний край фона</span><span class="size-input"><input id="outer" type="number" min="18" max="120" value="23"><span>px</span></span></label>
+          </div>
+          <details class="lab-details metadata">
+            <summary data-text="metadata">Данные снимка</summary>
+            <p class="profile-meta" id="color-profile"></p>
+            <div class="metadata-grid">
+              <label><span data-text="object">Название звезды</span><input id="star-name" autocomplete="off"></label>
+              <label><span data-text="cameraModel">Камера или телефон</span><input id="camera-model" autocomplete="off"></label>
+              <label><span data-text="lens">Объектив</span><input id="lens" autocomplete="off"></label>
+              <label><span>ISO</span><input id="iso" inputmode="numeric" autocomplete="off"></label>
+              <label><span data-text="exposure">Выдержка (с)</span><input id="exposure" autocomplete="off"></label>
+              <label><span data-text="wb">Баланс белого</span><input id="wb" autocomplete="off"></label>
+              <label><span data-text="photoTime">Время съёмки</span><input id="photo-time" autocomplete="off"></label>
+              <label><span data-text="timezone">Часовой пояс</span><input id="timezone" placeholder="+05:00" autocomplete="off"></label>
+            </div>
+          </details>
+        </section>
+
+        <aside class="lab-panel reading-panel" aria-labelledby="reading-title">
+          <div class="lab-panel-top">
+            <h2 id="reading-title" data-text="reading">Измерение</h2>
+            <span class="lab-status" id="quality" role="status" data-tone="neutral"></span>
+          </div>
+          <div class="reading-body">
+            <p class="reading-notice" id="reading-notice"></p>
+            <div class="ratio-line">
+              <div><p class="metric-label" data-text="ratio">Синий / красный</p><strong class="metric-value" id="ratio">—</strong></div>
+              <span class="color-chip" id="color-chip" title="RGB" aria-hidden="true"></span>
+            </div>
+            <div class="rgb" id="rgb-bars">
+              <div style="--channel:#f39e9d"><span>R</span><div class="rgb-track"><div></div></div><output>—</output></div>
+              <div style="--channel:#a6d7af"><span>G</span><div class="rgb-track"><div></div></div><output>—</output></div>
+              <div style="--channel:#9bbdff"><span>B</span><div class="rgb-track"><div></div></div><output>—</output></div>
+            </div>
+            <p class="lab-hint" id="color-summary"></p>
+            <div class="temperature-card">
+              <p class="metric-label" data-text="temperature">Оценка температуры</p>
+              <strong class="temp-value" id="temperature">—</strong>
+              <p id="temperature-note"></p>
+              <a href="#calibration" id="profile-link" data-text="calibration">Калибровка камеры</a>
+            </div>
+            <div class="reading-actions">
+              <button type="button" id="save-row" class="button button-secondary" data-text="saveReading" disabled>В журнал</button>
+              <button type="button" id="download-csv" class="button button-secondary" disabled>CSV</button>
+            </div>
+            <p class="lab-hint" id="export-status" role="status"></p>
+          </div>
+        </aside>
+      </div>
+
+      <details class="lab-panel lab-details lower-panel" id="calibration">
+        <summary data-text="calibration">Калибровка камеры</summary>
+        <p class="lab-hint" data-text="profileHelp">Загрузи профиль с 6 калибровочными и 3 отдельными проверочными звёздами. Снимок и профиль должны совпадать по камере, объективу, формату и настройкам съёмки.</p>
+        <div class="profile-actions">
+          <label class="button button-secondary file-button">
+            <span data-text="openProfile">Импорт JSON</span>
+            <input type="file" id="profile-input" accept=".json,application/json" data-label="openProfile" aria-label="Импорт JSON">
+          </label>
+          <button type="button" class="button button-secondary" id="template" data-text="profileTemplate">Шаблон профиля</button>
+        </div>
+        <p class="lab-hint" data-text="profileFormat">В settings укажи ISO / выдержку в секундах / баланс белого. В каждой строке укажи отдельную звезду, её B/R, справочную температуру и источник.</p>
+        <p id="profile-status" class="profile-meta" role="status"></p>
+        <div id="profile-report" hidden>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th data-text="object">Название звезды</th><th data-text="referenceT">Справочная, K</th><th data-text="estimatedT">Оценка, K</th><th>ΔT, K</th><th>δ, %</th></tr></thead>
+              <tbody id="profile-checks"></tbody>
+            </table>
+          </div>
+          <label class="confirm-line"><input type="checkbox" id="confirm-profile" disabled><span data-text="confirmProfile">Параметры съёмки и обработки совпадают с профилем.</span></label>
+        </div>
+      </details>
+
+      <details class="lab-panel lab-details lower-panel" id="log">
+        <summary><span data-text="journal">Журнал наблюдений</span> <span id="log-count"></span></summary>
+        <p class="lab-hint" data-text="journalHint">Добавляй измерения кадр за кадром. CSV включает значения и причины отбора за этот сеанс.</p>
+        <p id="journal-summary" class="profile-meta" hidden></p>
+        <div class="table-wrap" id="journal-table" hidden>
+          <table>
+            <thead><tr><th data-text="filename">Снимок</th><th>B/R</th><th>T, K</th><th data-text="status">Статус</th><th><span class="sr-only" data-text="remove">Удалить</span></th></tr></thead>
+            <tbody id="journal-rows"></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <section id="model-view" hidden>
+      <div class="lab-layout model-layout">
+        <section class="lab-panel plot-panel" aria-labelledby="plot-title">
+          <div class="lab-panel-top"><h2 id="plot-title" data-text="plotTitle">Отношение и температура</h2></div>
+          <div class="plot-body">
+            <canvas id="planck-chart" data-label="plotLabel" aria-label="График отношения яркости на 450 и 650 нм от температуры"></canvas>
+            <label class="model-slider"><span data-text="modelSlider">Температура модели</span><strong id="model-slider-value">6 000 K</strong>
+              <input type="range" id="model-range" min="2500" max="20000" step="1" value="6000">
+            </label>
+          </div>
+        </section>
+        <section class="lab-panel reading-panel" aria-labelledby="model-title">
+          <div class="lab-panel-top"><h2 id="model-title" data-text="modelTab">Модель Планка</h2></div>
+          <div class="reading-body model-body">
+            <p class="model-banner" data-text="modelBanner">Учебный расчёт для чёрного тела</p>
+            <label class="model-input"><span data-text="modelRatio">Отношение Bλ(450 нм) / Bλ(650 нм)</span>
+              <input id="model-ratio" value="1.1955" inputmode="decimal">
+            </label>
+            <p class="metric-label" data-text="modelResult">Температура модели</p>
+            <strong class="metric-value" id="model-result" role="status">6 000 K</strong>
+            <p class="lab-hint" id="model-note"></p>
+            <dl class="sensitivity" id="model-sensitivity"><div><dt>q − 5%</dt><dd id="model-minus">5 811 K</dd></div><div><dt>q + 5%</dt><dd id="model-plus">6 193 K</dd></div></dl>
+          </div>
+        </section>
+      </div>
+      <details class="lab-panel lab-details lower-panel" open>
+        <summary data-text="experiment">Расчётный эксперимент</summary>
+        <p class="lab-hint" data-text="experimentHint">Измени отношение на ±5% и сравни температурные оценки при разных исходных T.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>T₀, K</th><th>q(T₀)</th><th>T −, K</th><th>T +, K</th></tr></thead>
+            <tbody id="experiment-rows"></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <details class="lab-panel lab-details lower-panel">
+      <summary data-text="spectralTitle">Справочник спектральных классов</summary>
+      <p class="lab-hint" data-text="spectralNote">Диапазоны температур приблизительные. Спектральный класс уточняют по линиям спектра.</p>
+      <div class="spectral-list" id="spectral-list"></div>
+      <a class="source-link" href="https://openstax.org/books/astronomy/pages/17-3-the-spectra-of-stars-and-brown-dwarfs" target="_blank" rel="noopener">OpenStax Astronomy, § 17.3</a>
+    </details>
+  </main>
+  <footer class="shell site-footer">
+    <span>StarSpektra</span>
+    <span data-text="privacy">Фото обрабатывается на устройстве</span>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090e17">
+  <title>Атлас ночного неба</title>
+  <meta name="description" content="Определяет созвездия на фотографии и накладывает их линии прямо на снимок.">
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./fonts.css">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <svg class="icons" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-brand" viewBox="0 0 40 40">
+      <circle cx="20" cy="20" r="15"></circle><circle cx="20" cy="20" r="8" stroke-dasharray="2 3"></circle>
+      <path d="M20 3v6m0 22v6M3 20h6m22 0h6m-17-7 1.9 5.1L27 20l-5.1 1.9L20 27l-1.9-5.1L13 20l5.1-1.9L20 13Z"></path>
+    </symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v2"></path></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-4 4 4-4 4 4M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"></path></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 7h4l2-3h4l2 3h4a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z"></path><circle cx="12" cy="13" r="3.4"></circle></symbol>
+    <symbol id="i-constellation" viewBox="0 0 24 24"><path d="m4 18 5-5 5 2 6-8"></path><circle cx="4" cy="18" r="1.6"></circle><circle cx="9" cy="13" r="1.6"></circle><circle cx="14" cy="15" r="1.6"></circle><circle cx="20" cy="7" r="1.6"></circle></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"></path></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M9 4H4v5m11-5h5v5m0 6v5h-5M4 15v5h5"></path></symbol>
+    <symbol id="i-shrink" viewBox="0 0 24 24"><path d="M4 9h5V4m6 0v5h5m0 6h-5v5m-6 0v-5H4"></path></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5m0-8h.01"></path></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M7 7l10 10M7 17 17 7"></path></symbol>
+  </svg>
+  <header class="shell site-header">
+    <a class="brand" href="./" aria-label="Атлас ночного неба, главная">
+      <svg class="brand-mark" aria-hidden="true"><use href="#i-brand"></use></svg>
+      <span>Атлас <span>ночного неба</span></span>
+    </a>
+    <span class="privacy"><svg class="icon" aria-hidden="true"><use href="#i-lock"></use></svg> Фото остаётся на устройстве</span>
+  </header>
+
+  <nav class="shell mode-navigation" aria-label="Режим анализа">
+    <a href="./" aria-current="page">Созвездия</a>
+    <a href="./spectra/">Цвет и температура</a>
+  </nav>
+
+  <main class="shell">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <h1 id="hero-title">Найди созвездия<br> <em>на своём фото</em></h1>
+        <p>Загрузи снимок ночного неба. Атлас сопоставит звёзды с каталогом и нарисует линии созвездий поверх кадра.</p>
+        <div class="actions">
+          <label class="button button-primary file-button">
+            <svg class="icon" aria-hidden="true"><use href="#i-upload"></use></svg> Загрузить фото
+            <input id="photo-input" type="file" accept="image/*,.heic,.heif,.dng" aria-label="Загрузить фото" aria-describedby="file-formats">
+          </label>
+          <label class="button button-secondary file-button">
+            <svg class="icon" aria-hidden="true"><use href="#i-camera"></use></svg> Снять фото
+            <input id="camera-input" type="file" accept="image/*" capture="environment" aria-label="Снять фото">
+          </label>
+        </div>
+        <p class="drop-note" id="file-formats">JPG, PNG, WebP, HEIC/HEIF <span aria-hidden="true">·</span> До 50 МБ</p>
+        <noscript><p class="drop-note">Для анализа фото включи JavaScript и обнови страницу.</p></noscript>
+      </div>
+      <div class="hero-chart" aria-hidden="true">
+        <div class="chart-rings"></div>
+        <div class="chart-axis chart-axis-x"></div><div class="chart-axis chart-axis-y"></div>
+        <svg class="chart-figure" viewBox="0 0 360 290">
+          <path class="chart-path" d="M73 167 135 146 177 178 220 207 284 195 277 133 220 129 220 207"></path>
+          <g class="chart-points">
+            <circle cx="73" cy="167" r="3"></circle><circle cx="135" cy="146" r="3.5"></circle>
+            <circle cx="177" cy="178" r="3"></circle><circle cx="220" cy="207" r="3.4"></circle>
+            <circle cx="284" cy="195" r="3"></circle><circle cx="277" cy="133" r="4.3"></circle><circle cx="220" cy="129" r="3"></circle>
+          </g>
+          <g class="chart-cross">
+            <path d="M277 123v20m-10-10h20M65 167h16m-8-8v16"></path>
+            <circle cx="277" cy="133" r="11"></circle>
+          </g>
+        </svg>
+        <span class="chart-label label-n">N</span><span class="chart-label label-e">E</span>
+        <span class="chart-name">Большой Ковш</span>
+      </div>
+    </section>
+
+    <div id="screen-drop" class="screen-drop" hidden>Отпусти фото, чтобы начать анализ</div>
+
+    <section class="workspace" id="workspace" aria-labelledby="workspace-title">
+      <div class="workspace-heading">
+        <h2 id="workspace-title"><svg class="icon" aria-hidden="true"><use href="#i-constellation"></use></svg> Анализ снимка</h2>
+        <div class="workspace-actions">
+          <span id="status-chip" class="status-chip" data-tone="example"><span class="status-dot" aria-hidden="true"></span><span id="status-text">Пример снимка</span></span>
+          <label class="square-button file-button" title="Выбрать другое фото">
+            <svg class="icon" aria-hidden="true"><use href="#i-upload"></use></svg>
+            <input id="replace-photo-input" type="file" accept="image/*,.heic,.heif,.dng" aria-label="Выбрать другое фото">
+          </label>
+        </div>
+      </div>
+      <div class="workspace-body">
+        <div class="viewer" id="viewer">
+          <div class="image-wrap" id="image-wrap" style="--image-aspect: 1.4694">
+            <img id="preview-image" src="./assets/orion.jpg" alt="Фотография звёздного неба в области Ориона" decoding="async" draggable="false">
+            <canvas id="overlay" aria-hidden="true"></canvas>
+          </div>
+          <span class="viewer-corner top-left"></span><span class="viewer-corner top-right"></span>
+          <span class="viewer-corner bottom-left"></span><span class="viewer-corner bottom-right"></span>
+          <div class="viewer-controls">
+            <span id="coordinate-badge" class="coordinate-badge" hidden></span>
+            <button class="square-button" type="button" id="expand-photo" aria-label="Развернуть фото" title="Развернуть фото">
+              <svg class="icon" aria-hidden="true"><use href="#i-expand"></use></svg>
+            </button>
+          </div>
+        </div>
+
+        <aside class="results" id="results" aria-labelledby="results-title">
+          <h3 id="results-title">В кадре</h3>
+          <div class="result-content" id="result-content">
+            <div class="constellation-list">
+              <div class="constellation-entry static">
+                <span class="result-icon"><svg class="icon" aria-hidden="true"><use href="#i-constellation"></use></svg></span>
+                <span class="result-name">Орион<small lang="la">Orion</small></span>
+                <span class="result-tag">В центре</span>
+              </div>
+            </div>
+            <p class="result-note">Выбери пример внизу или загрузи свой снимок.</p>
+          </div>
+          <div class="layer-controls" id="layer-controls">
+            <label class="layer"><span>Линии созвездий</span><input id="toggle-lines" class="toggle" type="checkbox" role="switch" checked></label>
+            <label class="layer"><span>Названия звёзд</span><input id="toggle-stars" class="toggle" type="checkbox" role="switch" disabled></label>
+          </div>
+        </aside>
+      </div>
+    </section>
+    <p class="sr-only" id="live-status" role="status" aria-atomic="true"></p>
+
+    <section class="examples" aria-labelledby="examples-title">
+      <div class="section-title">
+        <h2 id="examples-title">Попробуй на готовом снимке</h2>
+      </div>
+      <div class="example-grid" id="examples">
+        <button type="button" class="example-card" data-example="orion" aria-pressed="true">
+          <img src="./assets/orion-thumb.webp" alt="" width="290" height="198" loading="lazy">
+          <span>Орион</span><svg class="icon example-arrow" aria-hidden="true"><use href="#i-chevron"></use></svg>
+        </button>
+        <button type="button" class="example-card" data-example="ursa-major" aria-pressed="false">
+          <img src="./assets/ursa-major-thumb.webp" alt="" width="290" height="197" loading="lazy">
+          <span>Большая Медведица</span><svg class="icon example-arrow" aria-hidden="true"><use href="#i-chevron"></use></svg>
+        </button>
+        <button type="button" class="example-card" data-example="cassiopeia" aria-pressed="false">
+          <img src="./assets/cassiopeia-thumb.webp" alt="" width="290" height="197" loading="lazy">
+          <span>Кассиопея</span><svg class="icon example-arrow" aria-hidden="true"><use href="#i-chevron"></use></svg>
+        </button>
+        <button type="button" class="example-card" data-example="cygnus" aria-pressed="false">
+          <img src="./assets/cygnus-thumb.webp" alt="" width="290" height="197" loading="lazy">
+          <span>Лебедь</span><svg class="icon example-arrow" aria-hidden="true"><use href="#i-chevron"></use></svg>
+        </button>
+      </div>
+      <details class="photo-help">
+        <summary><svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg> Как снять звёзды на телефон<svg class="icon summary-arrow" aria-hidden="true"><use href="#i-chevron"></use></svg></summary>
+        <p>Включи ночной режим и обопрись на что-нибудь устойчивое. Используй основную камеру на 1×. Оставь в кадре побольше неба, где видно несколько чётких звёзд. Яркие фонари, облака и смазанные звёзды мешают распознаванию.</p>
+      </details>
+    </section>
+  </main>
+
+  <footer class="shell site-footer">
+    <span>Атлас ночного неба</span>
+    <details class="credits">
+      <summary>Данные и фотографии</summary>
+      <div>
+        <p>Звёздный каталог XHIP и линии <a href="https://github.com/ofrohn/d3-celestial" target="_blank" rel="noopener">D3-Celestial</a> · <a href="./assets/catalog-license.txt" target="_blank">лицензия BSD</a>. Границы созвездий по <a href="https://cdsarc.cds.unistra.fr/viz-bin/cat/VI/42" target="_blank" rel="noopener">таблице Roman (1987)</a>.</p>
+        <p><a href="./vendor/SOURCES.txt" target="_blank" rel="noopener">Исходный код и лицензии декодера HEIC</a></p>
+        <p>Фотографии E. Slawik / NOIRLab / NSF / AURA / M. Zamani, кадрирование и коррекция насыщенности. <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.</p>
+        <nav aria-label="Оригиналы фотографий"><a href="https://noirlab.edu/public/images/orion/" target="_blank" rel="noopener">Орион</a><a href="https://noirlab.edu/public/images/ursa-major/" target="_blank" rel="noopener">Большая Медведица</a><a href="https://noirlab.edu/public/images/cassiopeia/" target="_blank" rel="noopener">Кассиопея</a><a href="https://noirlab.edu/public/images/cygnus/" target="_blank" rel="noopener">Лебедь</a></nav>
+      </div>
+    </details>
+  </footer>
+</body>
+</html>
